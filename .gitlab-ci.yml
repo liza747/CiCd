@@ -1,0 +1,63 @@
+stages:
+  - build
+  - codestyle
+  - test
+  - notifications_test
+  - deploy
+  - notifications_deploy
+
+building:
+  stage: build
+  script:
+    - cd src
+    - make s21_cat -C ./cat
+    - make s21_grep -C ./grep
+  artifacts:
+    paths:
+      - ./src/cat/s21_cat
+      - ./src/grep/s21_grep
+    expire_in: 30 days
+
+codestyle_test:
+  stage: codestyle
+  script:
+    - cd src
+    - make linter -C ./cat
+    - make linter -C ./grep
+
+integration_tests:
+  stage: test
+  script:
+    - cd src
+    - make -C ./cat
+    - make -C ./grep
+
+send_success_test:
+  stage: notifications_test
+  script:
+    - ./notifications.sh CI successful
+  when: on_success
+
+send_fail_test:
+  stage: notifications_test
+  script:
+    - ./notifications.sh CI unsuccessful
+  when: on_failure
+
+deployment:
+  stage: deploy
+  script:
+    - chmod +x ./deploy.sh
+    - ./deploy.sh
+
+send_success_deploy:
+  stage: notifications_deploy
+  script:
+    - ./notifications.sh CD successful
+  when: on_success
+
+send_fail_deploy:
+  stage: notifications_deploy
+  script:
+    - ./notifications.sh CD unsuccessful
+  when: on_failure
